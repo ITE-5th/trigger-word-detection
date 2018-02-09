@@ -1,0 +1,20 @@
+# Created by .ignore support plugin (hsz.mobi)
+/models/net1.pkl
+/dataset/X_dev.npy
+/dataset/Y_dev.npy
+/dataset/X.npy
+/dataset/Y.npy
+.idea/
+dataset/__pycache__/
+dataset/waves/
+models/
+net/__pycache__/
+wrappers/__pycache__/
+/audio/
+/dataset/raw_data/
+/dataset/train.wav
+/dataset/dataset.pkl
+/outputs/
+/audio/examples/
+/model.png
+/Model-params.png
