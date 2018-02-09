@@ -215,11 +215,11 @@ class Generator(object):
         noverlap = 120  # Overlap between windows
         nchannels = data.ndim
         if nchannels == 1:
-            freqs, _, pxx = signal.spectrogram(data, fs=fs,nperseg=nfft, nfft=nfft, noverlap=noverlap)
-            # pxx, freqs, bins, im = plt.specgram(data, nfft, fs, noverlap=noverlap)
+            # freqs, _, pxx = signal.spectrogram(data, fs=fs,nperseg=nfft, nfft=nfft, noverlap=noverlap)
+            pxx, freqs, bins, im = plt.specgram(data, nfft, fs, noverlap=noverlap)
         elif nchannels == 2:
-            freqs, _, pxx = signal.spectrogram(data[:, 0], fs=fs, nperseg=nfft, nfft=nfft, noverlap=noverlap)
-            # pxx, freqs, bins, im = plt.specgram(data[:, 0], nfft, fs, noverlap=noverlap)
+            # freqs, _, pxx = signal.spectrogram(data[:, 0], fs=fs, nperseg=nfft, nfft=nfft, noverlap=noverlap)
+            pxx, freqs, bins, im = plt.specgram(data[:, 0], nfft, fs, noverlap=noverlap)
         return pxx
 
     # Load a wav file
