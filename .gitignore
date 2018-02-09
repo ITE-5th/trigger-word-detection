@@ -10,10 +10,7 @@ dataset/waves/
 models/
 net/__pycache__/
 wrappers/__pycache__/
-/audio/
 /dataset/train.wav
 /dataset/dataset.pkl
 /outputs/
-/audio/examples/
-/model.png
 /Model-params.png
