@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import torch
 from torch.autograd import Variable
 from torch.nn import *
@@ -15,15 +17,18 @@ class Network(Module):
         self.relu = ReLU()
         self.dropout_0 = Dropout(0.8)
 
-        self.gru_1 = GRU(input_size=196, hidden_size=128, batch_first=True, dropout=0.8)
+        self.gru_1 = GRU(input_size=196, hidden_size=128, batch_first=True)
+        self.dropout_1 = Dropout(0.8)
         self.batch_norm_1 = BatchNorm1d(128, momentum=0.99, eps=0.001)
 
-        self.gru_2 = GRU(input_size=128, hidden_size=128, batch_first=True, dropout=0.8)
+        self.gru_2 = GRU(input_size=128, hidden_size=128, batch_first=True)
+        self.dropout_21 = Dropout(0.8)
         self.batch_norm_2 = BatchNorm1d(128, momentum=0.99, eps=0.001)
-        self.dropout_2 = Dropout(0.8)
+        self.dropout_22 = Dropout(0.8)
+        # self.time_distributed = TimeDistributed(torch.nn.Sequential(Linear(128, 1), Sigmoid()), batch_first=True)
         self.time_distributed = TimeDistributed(Linear(128, 1), batch_first=True)
 
-        self.sigmoid = Sigmoid()
+        # self.sigmoid = Sigmoid()
 
     def forward(self, input):
         x = self.conv(input)
@@ -33,20 +38,20 @@ class Network(Module):
 
         x = x.permute(0, 2, 1)
         x, _ = self.gru_1(x)
-        x = x.permute(0, 2, 1)
-        x = x.contiguous()
+        x = x.permute(0, 2, 1).contiguous()
+        x = self.dropout_1(x)
         x = self.batch_norm_1(x)
 
         x = x.permute(0, 2, 1)
         x, _ = self.gru_2(x)
-        x = x.permute(0, 2, 1)
-        x = x.contiguous()
+        x = x.permute(0, 2, 1).contiguous()
+        x = self.dropout_21(x)
         x = self.batch_norm_2(x)
-        x = self.dropout_2(x)
+        x = self.dropout_22(x)
 
         x = x.permute(0, 2, 1)
         x = self.time_distributed(x)
-        x = self.sigmoid(x)
+        # x = self.sigmoid(x)
 
         return x
 
@@ -54,6 +59,16 @@ class Network(Module):
         inputs = Variable(torch.from_numpy(inputs))
         if next(self.parameters()).is_cuda:
             inputs = inputs.cuda()
-        return self.forward(inputs)
 
+        x = self.conv(inputs)
+        x = self.relu(x)
 
+        x = x.permute(0, 2, 1)
+        x, _ = self.gru_1(x)
+        x = x.contiguous()
+
+        x, _ = self.gru_2(x)
+        # x = x.permute(0, 2, 1).contiguous()
+        x = self.time_distributed(x)
+
+        return x

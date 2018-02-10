@@ -4,7 +4,7 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 from pydub import AudioSegment
-from scipy import signal
+from pydub.playback import play
 from scipy.io import wavfile
 
 
@@ -43,7 +43,7 @@ class Generator(object):
             # if i % 100 == 0:
             print(i)
 
-        with open('dataset.pkl', 'wb') as f:
+        with open('dataset10.pkl', 'wb') as f:
             pickle.dump(dataset, f)
         print("Dataset was saved in your directory!")
 
@@ -255,3 +255,8 @@ class Generator(object):
                 negative = AudioSegment.from_wav("./raw_data/negatives/" + filename)
                 negatives.append(negative)
         return activates, negatives, backgrounds
+
+
+if __name__ == "__main__":
+    generator = Generator()
+    generator.create_dataset(50)
