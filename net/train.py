@@ -1,4 +1,5 @@
 import os
+from multiprocessing.pool import Pool
 
 import numpy as np
 import torch
@@ -6,25 +7,6 @@ from torch.nn import BCELoss
 from torch.optim import Adam
 
 from net.network import Network
-
-
-def o(x):
-    return 1 if x > 0.5 else 0
-
-
-def convert(x: torch.autograd.Variable):
-    a = x.cpu().data.numpy()
-    k = np.vectorize(o)
-    return k(a)
-
-
-def accuracy(x, y):
-    c = 0
-    for sample1, sample2 in zip(x, y):
-        if np.array_equal(sample1, sample2):
-            c = c + 1
-    return c
-
 
 X_train = np.load("../dataset/X.npy").astype(np.float32)
 Y_train = np.load("../dataset/Y.npy").astype(np.float32)
@@ -40,23 +22,32 @@ Y = torch.autograd.Variable(torch.from_numpy(Y_train)).cuda()
 
 net = Network().cuda()
 
-optimizer = Adam(net.parameters(), lr=0.005, weight_decay=0.01)
-criterion = BCELoss().cuda()
+optimizer = Adam(net.parameters(), lr=1e-3, eps=0, weight_decay=0.01)
+criterion = BCELoss()
+epochs = 4000
 
-for i in range(10001):
+
+def convert2(data: torch.FloatTensor):
+    return data >= 0.5
+
+
+for i in range(epochs):
     net.zero_grad()
-
     outputs = net(X)
 
     loss = criterion(outputs, Y)
     loss.backward()
-
     optimizer.step()
 
-    if i % 1000 == 0:
-        correct = accuracy(Y_train, convert(outputs))
-        print("epoch %i: %f" % (i, correct / Y_train.shape[0]))
-        torch.save(net.state_dict(), os.path.join('../models/', 'net-%d.pkl' % (i)))
+    if i % 5 == 0:
+        first = convert2(outputs.data)
+        second = Y.data.byte()
+        size = Y.shape[0] * Y.shape[1] * Y.shape[2]
+        correct = torch.eq(first, second).sum() / size
+        # correct = accuracy(Y_train, convert(outputs))
+        # print("epoch %i: %f - Loss: %.4f" % (i, correct / Y_train.shape[0], loss.data[0]))
+        print("Epoch[%d/%d], Loss: %.4f, Accuracy: %.4f" % (i, epochs, loss.data[0], correct / Y_train.shape[0]))
+        # torch.save(net.state_dict(), os.path.join('../models/', 'net-%d.pkl' % (i)))
 
 torch.save(net.state_dict(), os.path.join('../models/', 'net.pkl'))
 
