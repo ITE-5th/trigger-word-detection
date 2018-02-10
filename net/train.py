@@ -1,5 +1,4 @@
 import os
-from multiprocessing.pool import Pool
 
 import numpy as np
 import torch
@@ -22,7 +21,7 @@ Y = torch.autograd.Variable(torch.from_numpy(Y_train)).cuda()
 
 net = Network().cuda()
 
-optimizer = Adam(net.parameters(), lr=1e-3, eps=0, weight_decay=0.01)
+optimizer = Adam(net.parameters(), lr=1e-4, eps=0, weight_decay=0.01)
 criterion = BCELoss()
 epochs = 4000
 
@@ -47,7 +46,8 @@ for i in range(epochs):
         # correct = accuracy(Y_train, convert(outputs))
         # print("epoch %i: %f - Loss: %.4f" % (i, correct / Y_train.shape[0], loss.data[0]))
         print("Epoch[%d/%d], Loss: %.4f, Accuracy: %.4f" % (i, epochs, loss.data[0], correct / Y_train.shape[0]))
-        # torch.save(net.state_dict(), os.path.join('../models/', 'net-%d.pkl' % (i)))
+        if i % 100 == 0:
+            torch.save(net.state_dict(), os.path.join('../models/', 'net-%d.pkl' % (i)))
 
 torch.save(net.state_dict(), os.path.join('../models/', 'net.pkl'))
 
