@@ -17,7 +17,6 @@ class TimeDistributed(nn.Module):
         x_reshape = x.contiguous().view(-1, x.size(-1))  # (samples * timesteps, input_size)
 
         y = self.module(x_reshape)
-
         if self.activation is not None:
             y = self.activation(y)
 

@@ -17,7 +17,9 @@ def detect_triggerword(filename, model):
     # the spectogram outputs (freqs, Tx) and we want (Tx, freqs) to input into the model
     # x = x.swapaxes(0, 1)
     x = np.expand_dims(x, axis=0)
-    predictions = model.predict(x).cpu().data.numpy()
+    predictions = model.predict(x)
+
+    predictions = predictions.cpu().data.numpy()
 
     plt.subplot(2, 1, 2)
     plt.plot(predictions[0, :, 0])
@@ -47,18 +49,19 @@ def chime_on_activate(filename, predictions, threshold):
     audio_clip.export("../outputs/chime_output.wav", format='wav')
 
 
-def main():
+def main(filename):
     net = Network().cuda()
     print(net.eval())
-    net.load_state_dict(torch.load(os.path.join('../models/', 'net.pkl')))
+    net.load_state_dict(torch.load(os.path.join('../models/', filename + '.pkl')))
 
     filename = '../audio/examples/1.wav'
     prediction = detect_triggerword(filename, net)
-    chime_on_activate(filename, prediction, 0.5)
+    chime_on_activate(filename, prediction, 0.51)
     # playsound("chime_output.wav")
     song = AudioSegment.from_wav("../outputs/chime_output.wav")
     play(song)
 
 
 if __name__ == "__main__":
-    main()
+    filename = 'net'
+    main(filename)

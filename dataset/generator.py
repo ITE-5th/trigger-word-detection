@@ -4,6 +4,7 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 from pydub import AudioSegment
+from pydub.playback import play
 from scipy.io import wavfile
 
 
@@ -42,7 +43,7 @@ class Generator(object):
             # if i % 100 == 0:
             print(i)
 
-        with open('dataset.pkl', 'wb') as f:
+        with open('dataset10.pkl', 'wb') as f:
             pickle.dump(dataset, f)
         print("Dataset was saved in your directory!")
 
@@ -258,4 +259,4 @@ class Generator(object):
 
 if __name__ == "__main__":
     generator = Generator()
-    generator.create_dataset(5000)
+    generator.create_dataset(50)

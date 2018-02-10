@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import torch
 from torch.autograd import Variable
 from torch.nn import *
@@ -23,6 +25,7 @@ class Network(Module):
         self.dropout_21 = Dropout(0.8)
         self.batch_norm_2 = BatchNorm1d(128, momentum=0.99, eps=0.001)
         self.dropout_22 = Dropout(0.8)
+        # self.time_distributed = TimeDistributed(torch.nn.Sequential(Linear(128, 1), Sigmoid()), batch_first=True)
         self.time_distributed = TimeDistributed(Linear(128, 1), batch_first=True)
 
         # self.sigmoid = Sigmoid()
@@ -56,4 +59,16 @@ class Network(Module):
         inputs = Variable(torch.from_numpy(inputs))
         if next(self.parameters()).is_cuda:
             inputs = inputs.cuda()
-        return self.forward(inputs)
+
+        x = self.conv(inputs)
+        x = self.relu(x)
+
+        x = x.permute(0, 2, 1)
+        x, _ = self.gru_1(x)
+        x = x.contiguous()
+
+        x, _ = self.gru_2(x)
+        # x = x.permute(0, 2, 1).contiguous()
+        x = self.time_distributed(x)
+
+        return x
