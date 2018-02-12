@@ -1,8 +1,5 @@
-import os
-
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
 from pydub import AudioSegment
 from pydub.playback import play
 
@@ -49,19 +46,27 @@ def chime_on_activate(filename, predictions, threshold):
     audio_clip.export("../outputs/chime_output.wav", format='wav')
 
 
-def main(filename):
+def main():
     net = Network().cuda()
-    print(net.eval())
-    net.load_state_dict(torch.load(os.path.join('../models/', filename + '.pkl')))
+    # state = torch.load("../models/checkpoint-{}.pth.tar".format(epoch))
+    # net.load_state_dict(torch.load(os.path.join('../models/', filename + '.pkl')))
+    # module = to_module(state['state_dict'])
+    # net.load_state_dict(module)
+    net.load(601)
 
-    filename = '../audio/examples/1.wav'
-    prediction = detect_triggerword(filename, net)
-    chime_on_activate(filename, prediction, 0.51)
-    # playsound("chime_output.wav")
-    song = AudioSegment.from_wav("../outputs/chime_output.wav")
-    play(song)
+    while True:
+        # net = net.cuda()
+        filename = input("Enter path: ")  # '../dataset/train.wav'
+        # filename = '../audio/examples/1.wav'
+        # filename = '../dataset/raw_data/dev/2.wav'
+        # filename = "../dataset/waves/0.wav"
+        # filename = "../dataset/raw_data/backgrounds/2.wav"
+        prediction = detect_triggerword(filename, net)
+        chime_on_activate(filename, prediction, 0.5)
+        # playsound("chime_output.wav")
+        song = AudioSegment.from_wav("../outputs/chime_output.wav")
+        play(song)
 
 
 if __name__ == "__main__":
-    filename = 'net'
-    main(filename)
+    main()

@@ -4,7 +4,6 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 from pydub import AudioSegment
-from pydub.playback import play
 from scipy.io import wavfile
 
 
@@ -18,17 +17,41 @@ class Generator(object):
         self.activates, self.negatives, self.backgrounds = self.load_raw_audio()
 
     @staticmethod
-    def replaceZeroes(data):
+    def replace_zeroes(data):
         min_nonzero = np.min(data[np.nonzero(data)])
         data[data == 0] = min_nonzero
         return data
+
+    def create_waves(self, count, dir="./waves/", test=False):
+        for i in range(count):
+            background_index = np.random.randint(low=0, high=len(self.backgrounds))
+            x, y = Generator.create_training_example(self.backgrounds[background_index], self.activates, self.negatives)
+            # Export new training example
+            filepath = dir + '{}.wav'.format(i)
+            # wavfile.write(filepath, 44100, np.array(x.get_array_of_samples()))
+            x.export(filepath, format="wav")
+
+        print("wave files were saved in your directory!")
+
+        if test:
+            from dataset.dataset_tester import DatasetTester
+            DatasetTester.test()
+
+    def save_dataset(self, file_path="./partitions/", count_of_files=10, count_per_file=50):
+
+        for i in range(count_of_files):
+            dataset = self.create_dataset(count_per_file)
+
+            with open(file_path + 'partition-{}.pkl'.format(i), 'wb') as f:
+                pickle.dump(dataset, f)
+
+            print("Dataset{} was saved in your directory!".format(i))
 
     def create_dataset(self, count):
         dataset = []
         for i in range(count):
             background_index = np.random.randint(low=0, high=len(self.backgrounds))
-            x, y = Generator.create_training_example(self.backgrounds[background_index], self.activates,
-                                                     self.negatives)
+            x, y = Generator.create_training_example(self.backgrounds[background_index], self.activates, self.negatives)
             # Export new training example
             # filepath = "./waves/train" + str(i) + ".wav"
             filepath = 'train.wav'
@@ -39,13 +62,9 @@ class Generator(object):
             x = Generator.graph_spectrogram(filepath)
 
             dataset.append((x, y))
+            print("{} of 50".format(i))
 
-            # if i % 100 == 0:
-            print(i)
-
-        with open('dataset10.pkl', 'wb') as f:
-            pickle.dump(dataset, f)
-        print("Dataset was saved in your directory!")
+        return dataset
 
     @staticmethod
     def get_random_time_segment(segment_ms):
@@ -175,12 +194,12 @@ class Generator(object):
 
         # Step 2: Initialize segment times as empty list (≈ 1 line)
         previous_segments = []
-
+        max = 4
         # Select 0-4 random "activate" audio clips from the entire list of "activates" recordings
-        number_of_activates = np.random.randint(0, 5)
+        number_of_activates = np.random.randint(0, max)
         random_indices = np.random.randint(len(activates), size=number_of_activates)
         random_activates = [activates[i] for i in random_indices]
-
+        max -= number_of_activates
         # Step 3: Loop over randomly selected "activate" clips and insert in background
         for random_activate in random_activates:
             # Insert the audio clip on the background
@@ -191,7 +210,7 @@ class Generator(object):
             y = Generator.insert_ones(y, segment_end)
 
         # Select 0-2 random negatives audio recordings from the entire list of "negatives" recordings
-        number_of_negatives = np.random.randint(0, 3)
+        number_of_negatives = np.random.randint(0, max)
         random_indices = np.random.randint(len(negatives), size=number_of_negatives)
         random_negatives = [negatives[i] for i in random_indices]
 
@@ -202,7 +221,7 @@ class Generator(object):
 
         # Standardize the volume of the audio clip
         x = Generator.match_target_amplitude(background, -20.0)
-
+        # x = background
         return x, y
 
     # Calculate and plot spectrogram for a wav audio file
@@ -226,8 +245,6 @@ class Generator(object):
     @staticmethod
     def get_wav_info(wav_file):
         rate, data = wavfile.read(wav_file)
-        # song = AudioSegment.from_wav(wav_file)
-        # play(song)
         return rate, data
 
     # Used to standardize volume of audio clip
@@ -246,9 +263,9 @@ class Generator(object):
             if filename.endswith("wav"):
                 activate = AudioSegment.from_wav("./raw_data/activates/" + filename)
                 activates.append(activate)
-        for filename in os.listdir("./raw_data/backgrounds"):
+        for filename in sorted(os.listdir("./raw_data/backgrounds")):
             if filename.endswith("wav"):
-                background = AudioSegment.from_wav("./raw_data/backgrounds/" + filename)
+                background = AudioSegment.from_wav("./raw_data/backgrounds/" + filename)[:10000]
                 backgrounds.append(background)
         for filename in os.listdir("./raw_data/negatives"):
             if filename.endswith("wav"):
@@ -259,4 +276,6 @@ class Generator(object):
 
 if __name__ == "__main__":
     generator = Generator()
-    generator.create_dataset(50)
+    generator.save_dataset()
+    # a = len(os.listdir("./raw_data/backgrounds"))
+    # generator.create_waves(5, test=True)

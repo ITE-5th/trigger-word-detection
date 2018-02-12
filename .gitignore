@@ -99,3 +99,17 @@ ENV/
 
 # mypy
 .mypy_cache/
+!/dataset/raw_data/
+!/dataset/raw_data/activates/1.wav
+!/dataset/raw_data/activates/ukactiv001.wav
+!/dataset/raw_data/activates/2_act3.wav
+!/dataset/raw_data/activates/3_act3.wav
+!/dataset/raw_data/activates/1_act2.wav
+!/dataset/raw_data/activates/2_act2.wav
+!/dataset/raw_data/activates/1_act3.wav
+!/dataset/raw_data/activates/3.wav
+!/dataset/raw_data/activates/2.wav
+!/dataset/raw_data/activates/activate.wav
+!/dataset/raw_data/activates/10.wav
+!/dataset/raw_data/activates/9.wav
+!/dataset/raw_data/activates/3_act2.wav
