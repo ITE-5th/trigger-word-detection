@@ -5,7 +5,7 @@ from torch.nn import BCELoss
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from dataset.dataset import TriggerDataset
+from dataset.trigger_dataset import TriggerDataset
 from net.network import Network
 
 
@@ -13,32 +13,34 @@ def save_checkpoint(state, epoch):
     torch.save(state, "../models/checkpoint-{}.pth.tar".format(epoch))
 
 
-# X_train = np.load("../dataset/X.npy").astype(np.float32)
-# Y_train = np.load("../dataset/Y.npy").astype(np.float32)
-# # X = np.load("../datasets/X_dev.npy").astype(np.float32)
-# # Y = np.load("../datasets/Y_dev.npy").astype(np.float32)
-#
-# X_train = np.swapaxes(X_train, 1, 2)
-# X = torch.autograd.Variable(torch.from_numpy(X_train)).cuda()
-# Y = torch.autograd.Variable(torch.from_numpy(Y_train)).cuda()
-#
-# # X_dev = np.load("./dataset/X_dev.npy").astype(np.float32)
-# # Y_dev = np.load("./dataset/Y_dev.npy").astype(np.float32)
-
 net = Network()
-net = torch.nn.DataParallel(net).cuda()
 
-pretrained = False
+lr = 1e-4
+eps = 1e-7
+weight_decay = 0.01
+
+params = []
+for key, value in dict(net.named_parameters()).items():
+    if value.requires_grad:
+        params += [{'params': [value], 'lr': lr, 'weight_decay': weight_decay, 'eps': eps}]
+
+# , weight_decay=0.01
+# optimizer = Adam(filter(lambda x: x.requires_grad, net.parameters()), lr=1e-4, eps=1e-7, weight_decay=weight_decay)
+optimizer = Adam(params)
+criterion = BCELoss(size_average=False)
+
+pretrained = True
 
 start = 0
 epochs = 300
-if pretrained:
-    start = 190
-    net.load_state_dict(torch.load(os.path.join('../models/net-' + str(start) + '.pkl')))
-    epochs = 200 + start
 
-optimizer = Adam(net.parameters(), lr=1e-4, eps=0, weight_decay=0.01)
-criterion = BCELoss()
+if pretrained:
+    start = 401
+    epochs = start + 200
+    state = net.load(start)
+    optimizer.load_state_dict(state['optimizer'])
+
+net = torch.nn.DataParallel(net).cuda()
 
 batch_size = 24
 dataset = TriggerDataset('../dataset/dataset.pkl')
@@ -62,6 +64,15 @@ for epoch in range(start, epochs):
         total_loss += loss.data[0]
 
         loss.backward()
+        #
+        # for param in net.parameters():
+        #     print(param.grad.data.sum())
+        #
+        # # start debugger
+        # import pdb
+        #
+        # pdb.set_trace()
+
         optimizer.step()
 
         if epoch % 5 == 0:
@@ -74,7 +85,7 @@ for epoch in range(start, epochs):
     if epoch % 5 == 0:
         print("Epoch[%d/%d], Loss: %.4f, Accuracy: %.4f" % (epoch, epochs, total_loss, total_correct / len(dataset)))
 
-    if epoch > 100 and epoch % 10 == 0:
+    if epoch >= 100 and epoch % 50 == 0:
         save_checkpoint({
             'epoch': epoch + 1,
             'state_dict': net.state_dict(),
