@@ -113,3 +113,15 @@ ENV/
 !/dataset/raw_data/activates/10.wav
 !/dataset/raw_data/activates/9.wav
 !/dataset/raw_data/activates/3_act2.wav
+/_linux/
+/codestyles/
+/colors.scheme.xml
+/databaseSettings.xml
+/editor.xml
+/ignore.xml
+/baseRefactoring.xml
+/ide.general.xml
+/filetypes.xml
+/debugger.xml
+/vcs.xml
+/usageView.xml

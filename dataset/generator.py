@@ -1,10 +1,7 @@
-import os
-import pickle
-
-import matplotlib.pyplot as plt
+import joblib
 import numpy as np
-from pydub import AudioSegment
-from scipy.io import wavfile
+
+from util.sound import Sound
 
 
 class Generator(object):
@@ -12,15 +9,9 @@ class Generator(object):
     Tx = 5511
     n_freq = 101
 
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__()
-        self.activates, self.negatives, self.backgrounds = self.load_raw_audio()
-
-    @staticmethod
-    def replace_zeroes(data):
-        min_nonzero = np.min(data[np.nonzero(data)])
-        data[data == 0] = min_nonzero
-        return data
+        self._load_raw_audio()
 
     def create_waves(self, count, dir="./waves/", test=False):
         for i in range(count):
@@ -28,7 +19,6 @@ class Generator(object):
             x, y = Generator.create_training_example(self.backgrounds[background_index], self.activates, self.negatives)
             # Export new training example
             filepath = dir + '{}.wav'.format(i)
-            # wavfile.write(filepath, 44100, np.array(x.get_array_of_samples()))
             x.export(filepath, format="wav")
 
         print("wave files were saved in your directory!")
@@ -37,34 +27,44 @@ class Generator(object):
             from dataset.dataset_tester import DatasetTester
             DatasetTester.test()
 
-    def save_dataset(self, file_path="./partitions/", count_of_files=10, count_per_file=50):
+    def create_dataset(self, file_path="./partitions/", partitions_count=1, per_partition=4000,
+                       mode: str = 'a+b'):
 
-        for i in range(count_of_files):
-            dataset = self.create_dataset(count_per_file)
+        for i in range(partitions_count):
+            dataset = self._create_dataset_array(per_partition)
+            with open(file_path + "partition-{}.pkl".format(i), mode) as output_file:
+                joblib.dump(dataset, output_file, protocol=3)
 
-            with open(file_path + 'partition-{}.pkl'.format(i), 'wb') as f:
-                pickle.dump(dataset, f)
+    def _load_raw_audio(self,
+                        activates_dir: str = "../dataset/raw_data/activates/",
+                        backgrounds_dir: str = "../dataset/raw_data/backgrounds/",
+                        negatives_dir: str = "../dataset/raw_data/negatives/"):
+        # Load raw audio files for speech synthesis
+        self.activates = Sound.load_audio_from_dir(activates_dir)
+        self.backgrounds = Sound.load_audio_from_dir(backgrounds_dir)
+        self.negatives = Sound.load_audio_from_dir(negatives_dir)
 
-            print("Dataset{} was saved in your directory!".format(i))
-
-    def create_dataset(self, count):
+    def _create_dataset_array(self, count):
         dataset = []
         for i in range(count):
-            background_index = np.random.randint(low=0, high=len(self.backgrounds))
-            x, y = Generator.create_training_example(self.backgrounds[background_index], self.activates, self.negatives)
-            # Export new training example
-            # filepath = "./waves/train" + str(i) + ".wav"
-            filepath = 'train.wav'
-            # x = Generator.replaceZeroes(x)
-            x.export(filepath, format="wav")
-            # a = x.get_array_of_samples().astype(np.float64)
-            # Get and plot spectrogram of the new recording (background with superposition of positive and negatives)
-            x = Generator.graph_spectrogram(filepath)
 
-            dataset.append((x, y))
-            print("{} of 50".format(i))
+            dataset.append(self._create_sample())
+            if i % 10 == 0:
+                print("{} of {}".format(i, count))
 
+        print("{} of {}".format(i + 1, count))
         return dataset
+
+    def _create_sample(self):
+        background_index = np.random.randint(low=0, high=len(self.backgrounds))
+        x, y = Generator.create_training_example(self.backgrounds[background_index], self.activates, self.negatives)
+        # Export new training example
+        file_path = 'train.wav'
+        x.export(file_path, format="wav")
+        # Get and plot spectrogram of the new recording (background with superposition of positive and negatives)
+        x = Sound.graph_spectrogram(file_path)
+
+        return x, y
 
     @staticmethod
     def get_random_time_segment(segment_ms):
@@ -82,7 +82,7 @@ class Generator(object):
                                           high=10000 - segment_ms)  # Make sure segment doesn't run past the 10sec background
         segment_end = segment_start + segment_ms - 1
 
-        return (segment_start, segment_end)
+        return segment_start, segment_end
 
     @staticmethod
     def is_overlapping(segment_time, previous_segments):
@@ -220,62 +220,13 @@ class Generator(object):
             background, _ = Generator.insert_audio_clip(background, random_negative, previous_segments)
 
         # Standardize the volume of the audio clip
-        x = Generator.match_target_amplitude(background, -20.0)
+        x = Sound.match_target_amplitude(background, -20.0)
         # x = background
         return x, y
-
-    # Calculate and plot spectrogram for a wav audio file
-    @staticmethod
-    def graph_spectrogram(wav_file):
-        rate, data = Generator.get_wav_info(wav_file)
-        # data = Generator.replaceZeroes(data)
-        nfft = 200  # Length of each window segment
-        fs = 8000  # Sampling frequencies
-        noverlap = 120  # Overlap between windows
-        nchannels = data.ndim
-        if nchannels == 1:
-            # freqs, _, pxx = signal.spectrogram(data, fs=fs,nperseg=nfft, nfft=nfft, noverlap=noverlap)
-            pxx, freqs, bins, im = plt.specgram(data, nfft, fs, noverlap=noverlap)
-        elif nchannels == 2:
-            # freqs, _, pxx = signal.spectrogram(data[:, 0], fs=fs, nperseg=nfft, nfft=nfft, noverlap=noverlap)
-            pxx, freqs, bins, im = plt.specgram(data[:, 0], nfft, fs, noverlap=noverlap)
-        return pxx
-
-    # Load a wav file
-    @staticmethod
-    def get_wav_info(wav_file):
-        rate, data = wavfile.read(wav_file)
-        return rate, data
-
-    # Used to standardize volume of audio clip
-    @staticmethod
-    def match_target_amplitude(sound, target_dBFS):
-        change_in_dBFS = target_dBFS - sound.dBFS
-        return sound.apply_gain(change_in_dBFS)
-
-    # Load raw audio files for speech synthesis
-    @staticmethod
-    def load_raw_audio():
-        activates = []
-        backgrounds = []
-        negatives = []
-        for filename in os.listdir("./raw_data/activates"):
-            if filename.endswith("wav"):
-                activate = AudioSegment.from_wav("./raw_data/activates/" + filename)
-                activates.append(activate)
-        for filename in sorted(os.listdir("./raw_data/backgrounds")):
-            if filename.endswith("wav"):
-                background = AudioSegment.from_wav("./raw_data/backgrounds/" + filename)[:10000]
-                backgrounds.append(background)
-        for filename in os.listdir("./raw_data/negatives"):
-            if filename.endswith("wav"):
-                negative = AudioSegment.from_wav("./raw_data/negatives/" + filename)
-                negatives.append(negative)
-        return activates, negatives, backgrounds
 
 
 if __name__ == "__main__":
     generator = Generator()
-    generator.save_dataset()
+    generator.create_dataset(partitions_count=8, per_partition=512)
     # a = len(os.listdir("./raw_data/backgrounds"))
-    # generator.create_waves(5, test=True)
+    # generator.create_waves(a, test=True)

@@ -1,13 +1,13 @@
-import pickle
-
+import joblib
 from torch.utils.data import Dataset
 
 
 class TriggerDataset(Dataset):
-    def __init__(self, file_name):
-        with open(file_name, "rb") as f:
-            self.samples = pickle.load(f)
-            f.close()
+    def __init__(self, file_names):
+        self.samples = []
+        for file_name in file_names:
+            with open(file_name, "rb") as f:
+                self.samples.extend(joblib.load(f))
 
     def __getitem__(self, index):
         return self.samples[index]

@@ -35,16 +35,19 @@ start = 0
 epochs = 300
 
 if pretrained:
-    start = 401
+    start = 601
     epochs = start + 200
     state = net.load(start)
     optimizer.load_state_dict(state['optimizer'])
 
 net = torch.nn.DataParallel(net).cuda()
 
+partitions = ['../dataset/partitions/partition-{}.pkl'.format(i) for i in range(4)]
+
 batch_size = 24
-dataset = TriggerDataset('../dataset/dataset.pkl')
+dataset = TriggerDataset(partitions)
 loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count())
+print("Dataset Size: {}".format(len(dataset)))
 
 batch_loss, total_loss = 0, 0
 batches = len(dataset) / batch_size

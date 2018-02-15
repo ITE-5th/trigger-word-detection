@@ -8,11 +8,13 @@ from net.network import Network
 
 
 net = Network()
-state = net.load(600)
+state = net.load(601)
 net = torch.nn.DataParallel(net).cuda()
 
+partition = 4
+
 batch_size = 24
-dataset = TriggerDataset('../dataset/partitions/dataset2.pkl')
+dataset = TriggerDataset('../dataset/partitions/partition-{}.pkl'.format(partition))
 loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count())
 
 batches = len(dataset) / batch_size
