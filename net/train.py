@@ -1,4 +1,5 @@
 import os
+import time
 
 import torch
 from torch.nn import BCELoss
@@ -29,23 +30,21 @@ for key, value in dict(net.named_parameters()).items():
 optimizer = Adam(params)
 criterion = BCELoss(size_average=False)
 
-pretrained = True
+pretrained = False
 
 start = 0
-epochs = 300
+epochs = 200
 
 if pretrained:
-    start = 601
+    start = 200
     epochs = start + 200
     state = net.load(start)
     optimizer.load_state_dict(state['optimizer'])
 
 net = torch.nn.DataParallel(net).cuda()
 
-partitions = ['../dataset/partitions/partition-{}.pkl'.format(i) for i in range(4)]
-
-batch_size = 24
-dataset = TriggerDataset(partitions)
+batch_size = 128
+dataset = TriggerDataset("../dataset/partitions/partition-0.pkl")
 loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count())
 print("Dataset Size: {}".format(len(dataset)))
 
@@ -54,6 +53,7 @@ batches = len(dataset) / batch_size
 
 print("Begin Training")
 for epoch in range(start, epochs):
+    since = time.time()
 
     total_loss, total_correct = 0, 0
     for batch, samples in enumerate(loader):
@@ -78,17 +78,19 @@ for epoch in range(start, epochs):
 
         optimizer.step()
 
-        if epoch % 5 == 0:
-            first = outputs.data >= 0.5
-            second = target.data.byte()
-            size = target.shape[1] * target.shape[2]
-            correct = torch.eq(first, second).sum() / size
-            total_correct += correct
+        # if epoch % 5 == 0:
+        first = outputs.data >= 0.5
+        second = target.data.byte()
+        size = target.shape[1] * target.shape[2]
+        correct = torch.eq(first, second).sum() / size
+        total_correct += correct
 
-    if epoch % 5 == 0:
-        print("Epoch[%d/%d], Loss: %.4f, Accuracy: %.4f" % (epoch, epochs, total_loss, total_correct / len(dataset)))
+    time_elapsed = time.time() - since
+    time_str = '{:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60)
+    print("Epoch[%d/%d], Time: %s, Loss: %.4f, Accuracy: %.4f" % (
+        epoch, epochs, time_str, total_loss, total_correct / len(dataset)))
 
-    if epoch >= 100 and epoch % 50 == 0:
+    if epoch % 50 == 0:
         save_checkpoint({
             'epoch': epoch + 1,
             'state_dict': net.state_dict(),

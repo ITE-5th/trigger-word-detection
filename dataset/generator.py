@@ -25,15 +25,15 @@ class Generator(object):
 
         if test:
             from dataset.dataset_tester import DatasetTester
-            DatasetTester.test()
+            DatasetTester.test_spectrogram()
 
     def create_dataset(self, file_path="./partitions/", partitions_count=1, per_partition=4000,
-                       mode: str = 'a+b'):
+                       mode: str = 'wb'):
 
         for i in range(partitions_count):
             dataset = self._create_dataset_array(per_partition)
             with open(file_path + "partition-{}.pkl".format(i), mode) as output_file:
-                joblib.dump(dataset, output_file, protocol=3)
+                joblib.dump(dataset, output_file)
 
     def _load_raw_audio(self,
                         activates_dir: str = "../dataset/raw_data/activates/",
@@ -57,14 +57,17 @@ class Generator(object):
 
     def _create_sample(self):
         background_index = np.random.randint(low=0, high=len(self.backgrounds))
-        x, y = Generator.create_training_example(self.backgrounds[background_index], self.activates, self.negatives)
+        x, y = Generator.create_training_example(self.backgrounds[background_index][:10000], self.activates,
+                                                 self.negatives)
+        # print("background {}, x {}, y {}".format(len(self.backgrounds[background_index]), len(x), len(y[0])))
         # Export new training example
         file_path = 'train.wav'
         x.export(file_path, format="wav")
         # Get and plot spectrogram of the new recording (background with superposition of positive and negatives)
         x = Sound.graph_spectrogram(file_path)
+        # print("x {}".format(x.shape))
 
-        return x, y
+        return x[:, :self.Tx], y
 
     @staticmethod
     def get_random_time_segment(segment_ms):
@@ -194,12 +197,12 @@ class Generator(object):
 
         # Step 2: Initialize segment times as empty list (≈ 1 line)
         previous_segments = []
-        max = 4
+        # max = 5
         # Select 0-4 random "activate" audio clips from the entire list of "activates" recordings
-        number_of_activates = np.random.randint(0, max)
+        number_of_activates = np.random.randint(0, 5)
         random_indices = np.random.randint(len(activates), size=number_of_activates)
         random_activates = [activates[i] for i in random_indices]
-        max -= number_of_activates
+        # max -= number_of_activates
         # Step 3: Loop over randomly selected "activate" clips and insert in background
         for random_activate in random_activates:
             # Insert the audio clip on the background
@@ -210,7 +213,7 @@ class Generator(object):
             y = Generator.insert_ones(y, segment_end)
 
         # Select 0-2 random negatives audio recordings from the entire list of "negatives" recordings
-        number_of_negatives = np.random.randint(0, max)
+        number_of_negatives = np.random.randint(0, 3)
         random_indices = np.random.randint(len(negatives), size=number_of_negatives)
         random_negatives = [negatives[i] for i in random_indices]
 
@@ -227,6 +230,7 @@ class Generator(object):
 
 if __name__ == "__main__":
     generator = Generator()
-    generator.create_dataset(partitions_count=8, per_partition=512)
-    # a = len(os.listdir("./raw_data/backgrounds"))
-    # generator.create_waves(a, test=True)
+    # generator.create_dataset(partitions_count=1, per_partition=300)
+    import os
+    a = len(os.listdir("./raw_data/backgrounds"))
+    generator.create_waves(a, test=True)

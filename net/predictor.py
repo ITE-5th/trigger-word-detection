@@ -3,14 +3,14 @@ import numpy as np
 from pydub import AudioSegment
 from pydub.playback import play
 
-from dataset.generator import Generator
 from net.network import Network
+from util.sound import Sound
 
 
 def detect_triggerword(filename, model):
     plt.subplot(2, 1, 1)
 
-    x = Generator.graph_spectrogram(filename).astype(np.float32)
+    x = Sound.graph_spectrogram(filename).astype(np.float32)
     # the spectogram outputs (freqs, Tx) and we want (Tx, freqs) to input into the model
     # x = x.swapaxes(0, 1)
     x = np.expand_dims(x, axis=0)
@@ -52,7 +52,7 @@ def main():
     # net.load_state_dict(torch.load(os.path.join('../models/', filename + '.pkl')))
     # module = to_module(state['state_dict'])
     # net.load_state_dict(module)
-    net.load(801)
+    net.load(400)
 
     while True:
         # net = net.cuda()
@@ -63,7 +63,6 @@ def main():
         # filename = "../dataset/raw_data/backgrounds/2.wav"
         prediction = detect_triggerword(filename, net)
         chime_on_activate(filename, prediction, 0.5)
-        # playsound("chime_output.wav")
         song = AudioSegment.from_wav("../outputs/chime_output.wav")
         play(song)
 

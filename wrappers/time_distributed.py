@@ -2,10 +2,9 @@ import torch.nn as nn
 
 
 class TimeDistributed(nn.Module):
-    def __init__(self, module, activation=nn.Sigmoid(), batch_first=False):
+    def __init__(self, module, batch_first=False):
         super(TimeDistributed, self).__init__()
         self.module = module
-        self.activation = activation
         self.batch_first = batch_first
 
     def forward(self, x):
@@ -17,8 +16,6 @@ class TimeDistributed(nn.Module):
         x_reshape = x.contiguous().view(-1, x.size(-1))  # (samples * timesteps, input_size)
 
         y = self.module(x_reshape)
-        if self.activation is not None:
-            y = self.activation(y)
 
         # We have to reshape Y
         if self.batch_first:

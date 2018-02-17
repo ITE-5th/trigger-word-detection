@@ -13,20 +13,18 @@ class Network(Module):
         self.conv = Conv1d(101, 196, 15, stride=4)
         self.batch_norm_0 = BatchNorm1d(196, momentum=0.99, eps=0.001)
         self.relu = ReLU()
-        self.dropout_0 = Dropout(0.8)
+        self.dropout_0 = Dropout(0.5)
 
         self.gru_1 = GRU(input_size=196, hidden_size=128, batch_first=True)
-        self.dropout_1 = Dropout(0.8)
+        self.dropout_1 = Dropout(0.5)
         self.batch_norm_1 = BatchNorm1d(128, momentum=0.99, eps=0.001)
 
         self.gru_2 = GRU(input_size=128, hidden_size=128, batch_first=True)
-        self.dropout_21 = Dropout(0.8)
+        self.dropout_21 = Dropout(0.5)
         self.batch_norm_2 = BatchNorm1d(128, momentum=0.99, eps=0.001)
         self.dropout_22 = Dropout(0.5)
-        # self.time_distributed = TimeDistributed(torch.nn.Sequential(Linear(128, 1), Sigmoid()), batch_first=True)
-        self.time_distributed = TimeDistributed(Linear(128, 1), batch_first=True)
-
-        # self.sigmoid = Sigmoid()
+        self.time_distributed = TimeDistributed(torch.nn.Sequential(Linear(128, 1), Sigmoid()), batch_first=True)
+        # self.time_distributed = TimeDistributed(Linear(128, 1), batch_first=True)
 
     def forward(self, input):
         x = self.conv(input)
@@ -49,7 +47,6 @@ class Network(Module):
 
         x = x.permute(0, 2, 1)
         x = self.time_distributed(x)
-        # x = self.sigmoid(x)
 
         return x
 
@@ -59,14 +56,20 @@ class Network(Module):
             inputs = inputs.cuda()
 
         x = self.conv(inputs)
+        x = self.batch_norm_0(x)
         x = self.relu(x)
 
         x = x.permute(0, 2, 1)
         x, _ = self.gru_1(x)
-        x = x.contiguous()
+        x = x.permute(0, 2, 1).contiguous()
+        x = self.batch_norm_1(x)
 
+        x = x.permute(0, 2, 1)
         x, _ = self.gru_2(x)
-        # x = x.permute(0, 2, 1).contiguous()
+        x = x.permute(0, 2, 1).contiguous()
+        x = self.batch_norm_2(x)
+
+        x = x.permute(0, 2, 1)
         x = self.time_distributed(x)
 
         return x
