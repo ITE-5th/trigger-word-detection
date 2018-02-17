@@ -43,7 +43,7 @@ if pretrained:
 
 net = torch.nn.DataParallel(net).cuda()
 
-batch_size = 128
+batch_size = 64
 dataset = TriggerDataset("../dataset/partitions/partition-0.pkl")
 loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count())
 print("Dataset Size: {}".format(len(dataset)))
