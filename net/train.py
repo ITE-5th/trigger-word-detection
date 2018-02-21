@@ -48,6 +48,7 @@ if pretrained:
 net = torch.nn.DataParallel(net).cuda()
 
 batch_size = 32
+# dataset = TriggerDataset("../dataset/partitions/partition-0.pkl")
 dataset = TriggerDataset("../dataset/training_set.pkl")
 loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count())
 print("Dataset Size: {}".format(len(dataset)))
@@ -85,26 +86,13 @@ for epoch in range(start, epochs):
         optimizer.step()
 
         # if epoch % 5 == 0:
-        first = (outputs.data >= 0.5).float()
-        second = target.data.float()
-        size = target.shape[1] * target.shape[2]
-        # correct = torch.eq(first, second).sum() / size
-        # total_correct += correct
         accuracy_metric(outputs, target)
         precision_recall_metric(outputs, target)
-        #
-        # temp = first.clone()
-        # temp[temp == 0] = 2
-        # tp = torch.eq(first, second).sum()
-        # #
-        # # precision = tp / ( tp + fp )
-        # # recall = tp / (tp + fn)
 
-    precision, recall = precision_recall_metric.precision_recall()
     time_elapsed = time.time() - since
     time_str = '{:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60)
-    print("Epoch[%d/%d], Time: %s, Loss: %.4f, Accuracy: %.1f%%, Precision: %.4f, Recall: %.4f" % (
-        epoch, epochs, time_str, total_loss, accuracy_metric.accuracy, precision, recall))
+    print("Epoch[%d/%d], Time: %s, Loss: %.4f, %s, %s" % (
+        epoch, epochs, time_str, total_loss, accuracy_metric, precision_recall_metric))
 
     if epoch % 50 == 0:
         save_checkpoint({

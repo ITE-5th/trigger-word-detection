@@ -21,3 +21,6 @@ class BinaryAccuracy(Metric):
         self.total_count += y_pred.shape[0]
         self.accuracy = 100. * float(self.correct_count) / float(self.total_count * y_pred.shape[1] * y_pred.shape[2])
         return self.accuracy
+
+    def __str__(self) -> str:
+        return "Accuracy: %.1f%%" % self.accuracy
