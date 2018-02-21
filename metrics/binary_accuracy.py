@@ -24,3 +24,6 @@ class BinaryAccuracy(Metric):
 
     def __str__(self) -> str:
         return "Accuracy: %.1f%%" % self.accuracy
+
+    def __gt__(self, other: float):
+        return self.accuracy > other

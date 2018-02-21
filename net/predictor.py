@@ -52,7 +52,7 @@ def main():
     # net.load_state_dict(torch.load(os.path.join('../models/', filename + '.pkl')))
     # module = to_module(state['state_dict'])
     # net.load_state_dict(module)
-    net.load(200)
+    net.load(362)
 
     while True:
         # net = net.cuda()

@@ -3,11 +3,11 @@ import torch
 from metrics.metric import Metric
 
 
-class PrecisionRecall(Metric):
+class F1Score(Metric):
 
     def __init__(self):
-        self.tp, self.tn, self.fp, self.fn, self.precision, self.recall = 0, 0, 0, 0, 0, 0
-        self._name = 'precision_recall_metric'
+        self.tp, self.tn, self.fp, self.fn, self.f1 = 0, 0, 0, 0, 0
+        self._name = 'f1_score'
 
     def perf_metrics_2X2(self, true_labels, pred_labels):
         true_labels = true_labels.byte().view(-1)
@@ -29,15 +29,16 @@ class PrecisionRecall(Metric):
     def __call__(self, y_pred, y_true):
         return self.perf_metrics_2X2(y_true, y_pred)
 
-    def _precision_recall(self):
-        self.precision = 100. * self.tp / (self.tp + self.fp)
-        self.recall = 100. * self.tp / (self.tp + self.fn)
+    def _f1_score(self):
+        precision = self.tp / (self.tp + self.fp)
+        recall = self.tp / (self.tp + self.fn)
 
-        return self.precision, self.recall
+        self.f1 = 100. * ((precision * recall) / (precision + recall))
+        return self.f1
 
     def __str__(self) -> str:
-        self._precision_recall()
-        return "Precision: %.1f%%, Recall: %.1f%%" % (self.precision, self.recall)
+        self._f1_score()
+        return "F1-Score: %.1f%%" % self.f1
 
-    def __gt__(self, other: tuple):
-        return self.precision > other[0] and self.recall > other[1]
+    def __gt__(self, other: float):
+        return self.f1 > other
