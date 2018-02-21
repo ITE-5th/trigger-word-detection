@@ -230,7 +230,7 @@ class Generator(object):
 
 if __name__ == "__main__":
     generator = Generator()
-    generator.create_dataset(partitions_count=1, per_partition=300)
+    generator.create_dataset(partitions_count=1, per_partition=200)
     # import os
     # a = len(os.listdir("./raw_data/backgrounds"))
     # generator.create_waves(a, test=True)

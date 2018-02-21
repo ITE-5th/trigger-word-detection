@@ -6,15 +6,12 @@ from torch.utils.data import DataLoader
 from dataset.trigger_dataset import TriggerDataset
 from net.network import Network
 
-
 net = Network()
-state = net.load(601)
+state = net.load(201)
 net = torch.nn.DataParallel(net).cuda()
 
-partition = 4
-
 batch_size = 24
-dataset = TriggerDataset('../dataset/partitions/partition-{}.pkl'.format(partition))
+dataset = TriggerDataset('../dataset/test_set.pkl')
 loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count())
 
 batches = len(dataset) / batch_size
