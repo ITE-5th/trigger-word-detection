@@ -39,7 +39,7 @@ composer = MetricsComposer([accuracy_metric, precision_recall_metric, f1_metric]
 
 start = 0
 epochs = 200
-pretrained = True
+pretrained = False
 if pretrained:
     start = 357
     epochs = start + 200
@@ -50,7 +50,7 @@ net = torch.nn.DataParallel(net).cuda()
 
 batch_size = 24
 # dataset = TriggerDataset("../dataset/partitions/partition-0.pkl")
-dataset = TriggerDataset("../dataset/training_set.pkl")
+dataset = TriggerDataset("../dataset/dataset.pkl")
 loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=os.cpu_count())
 print("Dataset Size: {}".format(len(dataset)))
 

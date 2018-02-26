@@ -27,18 +27,18 @@ class Generator(object):
             from dataset.dataset_tester import DatasetTester
             DatasetTester.test_spectrogram()
 
-    def create_dataset(self, file_path="./partitions/", partitions_count=1, per_partition=4000,
+    def create_dataset(self, file_path="./dataset.pkl", partitions_count=1, per_partition=4000,
                        mode: str = 'wb'):
 
         for i in range(partitions_count):
             dataset = self._create_dataset_array(per_partition)
-            with open(file_path + "partition-{}.pkl".format(i), mode) as output_file:
+            with open(file_path, mode) as output_file:
                 joblib.dump(dataset, output_file)
 
     def _load_raw_audio(self,
-                        activates_dir: str = "../dataset/raw_data/activates/",
-                        backgrounds_dir: str = "../dataset/raw_data/backgrounds/",
-                        negatives_dir: str = "../dataset/raw_data/negatives/"):
+                        activates_dir: str = "./raw_data/activates/",
+                        backgrounds_dir: str = "./raw_data/backgrounds/",
+                        negatives_dir: str = "./raw_data/negatives/"):
         # Load raw audio files for speech synthesis
         self.activates = Sound.load_audio_from_dir(activates_dir)
         self.backgrounds = Sound.load_audio_from_dir(backgrounds_dir)

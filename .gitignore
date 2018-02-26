@@ -113,6 +113,7 @@ ENV/
 !/dataset/raw_data/activates/10.wav
 !/dataset/raw_data/activates/9.wav
 !/dataset/raw_data/activates/3_act2.wav
+!/datasets/combine_partitions.py
 /_linux/
 /codestyles/
 /colors.scheme.xml
