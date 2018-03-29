@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 from pydub import AudioSegment
 from pydub.playback import play
+from torch.autograd import Variable
 
 from net.network import Network
 from util.sound import Sound
@@ -14,7 +16,8 @@ def detect_triggerword(filename, model):
     # the spectogram outputs (freqs, Tx) and we want (Tx, freqs) to input into the model
     # x = x.swapaxes(0, 1)
     x = np.expand_dims(x, axis=0)
-    predictions = model.predict(x)
+    x = Variable(torch.from_numpy(x)).cuda()
+    predictions = model(x)
 
     predictions = predictions.cpu().data.numpy()
 
@@ -52,7 +55,8 @@ def main():
     # net.load_state_dict(torch.load(os.path.join('../models/', filename + '.pkl')))
     # module = to_module(state['state_dict'])
     # net.load_state_dict(module)
-    net.load(362)
+    net.load(458)
+    net.eval()
 
     while True:
         # net = net.cuda()
